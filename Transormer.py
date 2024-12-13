@@ -1,9 +1,7 @@
 import numpy as np
-
-import numpy as np
-from TransformerCore import TransformerCore
 from Layer import Layer
 from Decoder import Decoder
+from Encoder import Encoder
 
 def positional_encoding(seq_len, d_model):
     pos = np.arange(seq_len)[:, np.newaxis]
@@ -29,11 +27,12 @@ class TransformerModel:
         self.encoder_embeddings = np.random.randn(vocab_size_src, d_model) * 0.1
         self.decoder_embeddings = np.random.randn(vocab_size_tgt, d_model) * 0.1
         self.encoder_layers = [Layer(d_model,d_ff) for _ in range(num_layers)]
-        self.decoder_layers = [Layer(d_model,d_ff)  for _ in range(num_layers)]
+
         self.output_projection = np.random.randn(d_model, vocab_size_tgt) * 0.1
 
         #Инициализируем декодер
         self.decoder=Decoder(num_heads, d_model, d_ff, num_layers)
+        self.encoder=Encoder(num_heads, d_model, d_ff, num_layers)
 
 
     def forward(self, src, tgt):
@@ -46,10 +45,8 @@ class TransformerModel:
         src_emb = self.add_positional_encoding(embed, src.shape[0], self.d_model)
         tgt_emb = self.add_positional_encoding(self.embed(tgt, self.decoder_embeddings), tgt.shape[0], self.d_model)
 
-
         # Энкодер
-        for layer in self.encoder_layers:
-            src_emb = layer.transformer_layer(src_emb, self.num_heads, self.d_model, self.d_ff)
+        self.encoder.forward(src_emb)
 
         # Декодер
         self.decoder.forward(src_emb,tgt_emb)
